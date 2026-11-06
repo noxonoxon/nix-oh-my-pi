@@ -23,11 +23,23 @@ jobs:
         with:
           name: nox
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          skipPush: true
           extraPullNames: nix-community
 
       - name: Build oh-my-pi
+        id: build
         run: |
-          nix build \
+          out=$(nix build \
+            --print-out-paths \
+            --no-link \
             --print-build-logs \
             --keep-going \
-            github:can1357/oh-my-pi#default
+            github:can1357/oh-my-pi/v18.16.0#default)
+          echo "out=$out" >> "$GITHUB_OUTPUT"
+          echo "Built: $out"
+
+      - name: Push package
+        run: |
+          out="${{ steps.build.outputs.out }}"
+          echo "Pushing: $out"
+          nix-store -qR "$out" | cachix push nox
