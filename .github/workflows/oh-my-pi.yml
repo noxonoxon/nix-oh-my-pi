@@ -1,0 +1,33 @@
+name: Build oh-my-pi
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            max-jobs = auto
+            cores = 0
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v17
+        with:
+          name: nox
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          extraPullNames: nix-community
+
+      - name: Build oh-my-pi
+        run: |
+          nix build \
+            --print-build-logs \
+            --keep-going \
+            github:can1357/oh-my-pi#default
